@@ -1,0 +1,9 @@
+
+.header {
+	background-color: black;
+	height: 80px;
+	line-height: 80px;
+	top: 0;
+	left: 0;
+	position: fixed;
+}
