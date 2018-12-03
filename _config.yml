@@ -25,8 +25,9 @@ twitter_username: jekyllrb
 github_username:  jekyll
 
 # Build settings
-# markdown: kramdown
-theme: minimal-mistakes-jekyll
+markdown: kramdown
+# theme: minimal-mistakes-jekyll
+remote-theme: "mmistakes/minimal-mistakes@4.14.1"
 plugins:
   - jekyll-feed
 
