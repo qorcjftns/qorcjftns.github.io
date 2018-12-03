@@ -27,7 +27,7 @@ github_username:  jekyll
 # Build settings
 markdown: kramdown
 # theme: minimal-mistakes-jekyll
-remote-theme: TaylanTatli/Moon
+remote_theme: TaylanTatli/Moon
 plugins:
   - jekyll-feed
 
