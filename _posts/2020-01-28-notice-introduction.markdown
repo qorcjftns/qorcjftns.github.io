@@ -3,6 +3,7 @@ layout:     post
 type:       posts
 title:      블로그를 시작하며...
 categories: "공지사항"
+date:       "2020-01-27"
 tags:       ["notice", "공지사항", "personal story"]
 ---
 
@@ -21,7 +22,7 @@ tags:       ["notice", "공지사항", "personal story"]
 본 블로그의 목표는 단순하고 명확하다. 더 다양한 사람들이 개발을 능숙하게 할 수 있도록 도와주고 싶다. 그러기 위해서 흥미롭고 특이한 프로젝트를 많이 진행할 것 같다.
 
 생각중인 프로젝트는 몇가지가 있는데,
-* React로 테트리스 만들기
+* [React로 테트리스 만들기](/category/react-tetris)
 * React를 이용한 Pokemon 클론 게임 만들기
 
 등등이 그 예시이다.
