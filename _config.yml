@@ -34,6 +34,8 @@ repository: "qorcjftns/qorcjftns.github.io"
 plugins:
   - jekyll-feed
   - jekyll-include-cache
+  - jekyll-seo-tag
+  
 
 # Exclude from processing.
 # The following items will not be processed, by default.
@@ -76,3 +78,5 @@ disqus:
   shortname: qorcjftns-github-io
 
 paginate: 5
+
+google_analytics: "UA-157228611-1"

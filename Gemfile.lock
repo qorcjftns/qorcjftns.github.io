@@ -254,6 +254,7 @@ DEPENDENCIES
   jekyll-include-cache
   jekyll-paginate
   jekyll-paginate-category
+  jekyll-seo-tag
   tzinfo (~> 1.2)
   tzinfo-data
   wdm (~> 0.1.1)
