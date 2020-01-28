@@ -71,5 +71,8 @@ defaults:
 #mmistakes setting
 minimal_mistakes_skin: "air"
 locale: "ko"
-paginate: 5
 
+pagination:
+  enabled: true
+paginate: 5
+paginate_path: /index.markdown
