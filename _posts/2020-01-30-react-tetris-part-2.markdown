@@ -2,7 +2,7 @@
 layout: post
 type:   posts
 title:  "[2] React 기반 테트리스 만들기 - 설계 2편"
-date:   "2020-01-28"
+date:   "2020-01-30"
 categories:
   - "React Tetris 튜토리얼"
 tags:
