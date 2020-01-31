@@ -1,7 +1,7 @@
 ---
 layout: post
 type:   posts
-title:  "[1] React 기반 테트리스 만들기 - 설계"
+title:  "[1] React 기반 테트리스 만들기 - 설계 1편"
 date:   "2020-01-28"
 categories:
   - "React Tetris 튜토리얼"
