@@ -30,6 +30,7 @@ tags:
 
 자동 생성된 파일의 자세한 설명을 원하는 경우, 추후 올라올 react 기초 강좌를 참고하거나 다른 다양한 블로그들을 검색하여 찾아보도록 하자.
 
+{% include adsense.html %}
 
 ### View
 기본적으로는 웹 어플리케이션으로 제작이 되기 때문에 View 클래스들은 모두 근본적으로는 HTML로 이루어지게 될 것이다. 물론 우리는 <code>React</code>를 활용하기 때문에 <code>React.Component</code>와 <code>JSX</code>를 활용하게 될 것이다.

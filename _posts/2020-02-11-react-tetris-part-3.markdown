@@ -13,7 +13,7 @@ tags:
   - react-tetris
 ---
 
-## 드디어 개발 시작!
+## Redux Store 기본 세팅
 
 거두절미하고, 우선은 기본적인 Redux store를 만들어주어야 한다.
 
@@ -47,6 +47,10 @@ export default rootReducer;
 {% endhighlight %}
 
 우리가 이전 포스팅에서 만들었던 그 구조를 기억하며 store의 초기값을 설정해주었다. 아직 이름만 지어주고 value는 넣지 않았지만, 추후에 action을 사용하여 넣어주도록 할 것이다.
+
+{% include adsense.html %}
+
+## 기본적인 Action 만들기
 
 이제 우리의 reducer에 다양한 action 함수들을 생성해주도록 한다.
 
