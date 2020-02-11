@@ -41,6 +41,7 @@ tags:
 * npm (version: 6.13.6)
 * react (version: 16.12.0)
 * create-react-app (version: 3.3.0)
+* redux (version 4.0.5)
 * 필자 OS: macOS Catalina (10.15.3)
 
 <code>Node.js</code>의 버전은 우선 현 시점의 LTS 버전인 <code>12.14.1</code>을 사용하기로 한다. <code>npm</code>의 경우도 마찬가지 이유로 <code>6.13</code> 버전을 사용한다.
@@ -73,6 +74,10 @@ $ create-react-app react-tetris
 $ cd react-tetris
 {% endhighlight %}
 
+### 4. redux 설치
+{% highlight bash %}
+$ npm install -S redux react-redux
+{% endhighlight %}
 
 ## 다음 포스팅
 다음 포스티에서는 프로젝트의 구조 및 설계를 시작하도록 할 것이다.

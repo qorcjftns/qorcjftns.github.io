@@ -15,13 +15,13 @@ tags:
 
 ## 프로젝트 구조
 
-이번 시간에는 테트리스 프로젝트의 기본 틀을 잡아보도록 하자. 기본적으로는 MVC 패턴을 따라가볼 예정이다. 이를 위해서 우선은 폴더 구조를 아래와 같이 만들어보자.
+이번 시간에는 테트리스 프로젝트의 기본 틀을 잡아보도록 하자. 기본적으로는 MVC 패턴을 따라가볼 예정이다. 물론, 말이 MVC이지 실질적으로는 <code>redux</code> 구조이다. 이를 위해서 우선은 폴더 구조를 아래와 같이 만들어보자.
 
 {% highlight bash %}
 ┍public
 ├src
 │┖┬controller
-│ ├model
+│ ├store
 │ ├view
 ...
 {% endhighlight %}
@@ -64,23 +64,16 @@ App.js
 우선은 큰 틀은 위와 같고, 세세한 View들은 그때그떄 필요할 때 만들어주도록 할 것이다. 너무 많은 디테일까지 설계해두기에는 아직 어떠한 것이 필요할지 확실하지 않기 때문이다. 머릿속에 그려지는 부분들이 물론 있긴 하지만, 그때그때 구현해 주도록 하자.
 
 
-### Model
-Model 구조는 굉장히 단순하다. "Model"은 사실 테트리스에서 다양하게 만들 이유도 없기 때문에, 최대한 단순화 시키고 싶다.
+### Model (Redux store)
+Model 구조는 굉장히 단순하다. "Model"은 사실 테트리스에서 다양하게 만들 이유도 없기 때문에, 최대한 단순화 시키고 싶다. Redux store에 모든 데이터를 저장해 둘 것이기 때문에 따로 model 파일은 만들지 않겠다.
 
-{% highlight bash %}
-BaseModel.js
-┖┬TetriminoModel.js
- ├GameBoardModel.js
-...
-{% endhighlight %}
+편의상 각 모델에 아래와 같은 네이밍을 지어줄 것이며, 각 모델은 데이터화 되어 Redux store에 저장하게 된다.
 
-여기서의 BaseModel은 View같이 종속관계가 아닌 상속관계를 표현하였다. 정말 단순한 구조이지만, **View**는 설명하고 여기를 설명 안하면 차별이 되기 때문에 가볍게 설명하보도록 하겠다.
+* **TetriminoModel** - 단일 테트리미노 1개를 표현하는 모델이다. 개별 테트리미노 모양 정보 등을 가지고 있게 된다.
+* **NextModel** - 다음 테트리미노의 정보를 가지고 있는 모델이다.
+* **GameBoardModel** - 현재 테트리스 게임의 보드 상황을 표현하는 모델이다.
 
-* **BaseModel.js** - 모든 Model 클래스의 기본형이다. 게임 모델 간의 충돌 체크를 해주는 부분까지 여기에 넣어보도록 하자.
-* **TetriminoModel.js** - 단일 테트리미노 1개를 표현하는 모델이다. 개별 테트리미노 모양 정보 등을 가지고 있게 된다.
-* **GameBoardModel.js** - 현재 테트리스 게임의 보드 상황을 표현하는 모델이다.
-
-여기서 한가지 참고할 사항은, 모든 Model은 <code>Redux</code>를 통하여 Global하게 관리하여 줄 것이다. 일반적인 <code>React</code>는 모델들이 View에 종속적이라서 Props와 State를 통하여 변경을 해주는데, 이렇게 하면 Controller와의 연계를 구현하기가 매우 쉽지 않게 되기 때문이다.
+여기서 한가지 참고할 사항은, 모든 Model은 <code>Redux</code>를 통하여 Global하게 관리된다는 것이다. 일반적인 <code>React</code>는 모델들이 View에 종속적이라서 Props와 State를 통하여 변경을 해주는데, 이렇게 하면 Controller와의 연계를 구현하기가 매우 쉽지 않게 되기 때문이다.
 
 
 ### Controller
