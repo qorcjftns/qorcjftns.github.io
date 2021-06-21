@@ -94,7 +94,7 @@ if(map[*posx + xdir][*posy + ydir] == 2) { // 다음칸이 구멍일 경우, 한
 }
 {% endhighlight %}
 
-단순한 원리의 작동 방식이다. 주어진 posx, posy 방향이 빈 공간일 시 해당 방향으로 한칸씩 전진한다. 루프가 끝난 시점에서 해당 방향의 다음칸이 구멍(<code>2</code>)일 경우, 공을 구멍 위에 위치시키고 함수를 종료한다.
+단순한 원리의 작동 방식이다. 주어진 <code>posx</code>, <code>posy</code> 방향이 빈 공간일 시 해당 방향으로 한칸씩 전진한다. 루프가 끝난 시점에서 해당 방향의 다음칸이 구멍(<code>2</code>)일 경우, 공을 구멍 위에 위치시키고 함수를 종료한다.
 
 자, 이제 기본적인 세팅은 끝났다. 이제 본격적으로 DFS를 적용하여 문제를 풀어보도록 하자.
 
@@ -116,3 +116,89 @@ typedef struct _state {
 } State;
 {% endhighlight %}
 
+이 State를 이제 queue에 넣어서 DFS 알고리즘을 시작해줄 것이다.
+
+{% highlight cpp %}
+queue<State> q;
+q.push({1, rx, ry, bx, by});
+{% endhighlight %}
+
+우선 <code>State queue</code>를 만들어주고 <code>depth</code>는 1, <code>rx, ry, bx, by</code>는 초기 입력된 값으로 넣어주었다.
+
+마지막 준비 작업으로, flag를 만들어줄 것이다. flag는 특정 State가 이미 한번 탐색되었는지 아닌지를 표기하게 하여 탐색 횟수를 최소화하기 위한 방안이다.
+
+{% highlight cpp %}
+bool flag[10][10][10][10];
+{% endhighlight %}
+
+이로서 모든 준비는 완료되었고, 다음의 과정만 차례로 수행해주면 결과를 얻을 수 있다.
+
+1. <code>queue</code>의 맨 앞 <code>State</code>를 <code>pop</code>해준다.
+ 1. 만약 <code>state.depth == 10</code>일 경우, 루프를 빠져나간다.
+ 2. 만약 <code>flag[state.rx][state.ry][state.bx][state.by]</code>가 true일 경우, 바로 1로 돌아간다. (<code>continue</code>)
+2. <code>pop</code>된 <code>State</code>에서 각각 위, 아래, 왼쪽, 오른쪽으로 빨강공과 파랑공에 대하여 각각 <code>move_ball</code> 함수를 동작해준다.
+ 1. move_ball 이후 만약 빨강공과 파랑공의 위치가 동일하고 빨강공과 파랑공이 둘다 같은 위치일 경우, 위치를 조정해준다.
+ 2. 만약 현재 <code>bx == ox && by == oy</code>일 경우, 1로 돌아간다.
+ 3. **만약 현재 <code>rx == ox && ry == oy</code>일 경우, <code>depth</code>가 정답이므로, 루프를 빠져나간다.**
+4. 각각의 상태 4개를 <code>queue</code>에 넣어주고 1로 돌아간다. (depth는 1을 더해준다)
+
+우리의 최종 목표는 1-4의 상태를 만드는 것이다.
+
+위 로직을 코드로 표현하면 아래와 같다:
+
+{% highlight cpp %}
+int ans = -1; // 정답
+int dirs[4][2] = {{1,0},{-1,0},{0,1},{0,-1}}; // 방향 변수
+
+while(!q.empty() && ans == -1) { // q에 값이 존재하고 ans가 구해지지 않았을때
+	// popup data
+	state cur = q.front();
+	q.pop();
+
+	if(cur.depth > 10) break;
+	cur_rx = cur.rx; cur_ry = cur.ry;
+	cur_bx = cur.bx; cur_by = cur.by;
+
+	if(flags[cur_rx][cur_ry][cur_bx][cur_by] == 1) continue;
+	flags[cur_rx][cur_ry][cur_bx][cur_by] = 1;
+
+
+	for(int i = 0 ; i < 4 ; i++) { // 각 방향별로
+		// move balls
+		int temp_rx = cur_rx, temp_ry = cur_ry,
+			temp_bx = cur_bx, temp_by = cur_by;
+		move_ball(map, &temp_rx, &temp_ry, dirs[i][0], dirs[i][1]);
+		move_ball(map, &temp_bx, &temp_by, dirs[i][0], dirs[i][1]);
+
+		// check result
+		if(map[temp_bx][temp_by] == 2) continue; // blue fell into hole
+
+		if(map[temp_rx][temp_ry] == 2) { // red fell into hole
+			ans = cur.depth;
+		} else { // nothing happened
+			if(temp_rx == temp_bx && temp_ry == temp_by) { // 공 위치 조정
+				if(i == 0) { if(cur_rx < cur_bx) temp_rx -= 1; else temp_bx -= 1; }
+				if(i == 1) { if(cur_rx < cur_bx) temp_bx += 1; else temp_rx += 1; }
+				if(i == 2) { if(cur_ry < cur_by) temp_ry -= 1; else temp_by -= 1; }
+				if(i == 3) { if(cur_ry < cur_by) temp_by += 1; else temp_ry += 1; }
+			}
+			q.push({cur.depth + 1, temp_rx, temp_ry, temp_bx, temp_by});
+		}
+	}
+{% endhighlight %}
+
+
+## 마무리
+
+| 메모리 | 시간 |
+| ----- | --- |
+| 2104KB | 0ms |
+
+채점 결과는 깔끔하게 나오고 정답 표기가 되었다.
+
+코드 반복을 줄이기 위하여 방항 변수를 만들어 루프 처리하고 코드를 간편화하였다.
+본 문제의 핵심은 <code>DFS</code>를 사용하여 탐색 시간을 얼마나 잘 줄일 수 있는지, 그리고 문제가 제공해준 환경을 걸마나 간결하게 구현할 수 있는지가 포인트였던 것 같다.
+
+본 문제를 <code>BFS</code>로 푸는것 또한 물론 가능하지만 굉장히 비효율적이며, <code>BFS</code>로 푸는 순간 이 문제는 사실상 <code>Brute Force</code> 알고리즘이 되어버린다.
+
+**항상 특정 조건을 가장 ***빨리*** 달성하는 문제는 대부분 ***DFS***로 먼저 접근해봐야 한다는 것을 명심하자**
