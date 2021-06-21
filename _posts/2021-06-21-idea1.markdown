@@ -1,0 +1,118 @@
+---
+layout: post
+type:   posts
+title:  "[백준 알고리즘 풀이][C++] 13460: 구슬 탈출 2"
+date:   "2021-06-21"
+categories:
+  - "아이디어"
+tags:
+  - 백준
+  - 알고리즘
+  - 삼성
+  - DFS
+  - 시뮬레이션
+  - 구현
+  - 그래프이론
+  - C++
+---
+
+## 기본 개념
+
+이러한 문제를 풀때 가장 기초가 되는 것이 바로 문제에서 주어진 상황을 정확히, 그리도 간결하게 구현하는 부분일 것이다.
+구슬 탈출 게임에서 구현해야할 부분은 당연하게도 우선 게임 필드와 필드 조작일 것이다.
+
+기본적인 구현이 끝나면 그 이후는 알고리즘 구현이 필요하다. 본 문제는 <code>DFS</code>, 즉 <code>깊이 우선 탐색</code> 기법을 활용하여 문제를 풀면 빠르게 답을 구할 수 있다.
+우선, 주어진 게임 필드의 초기 상태를 그래프의 <code>root</code>로 둔 후, 4가지 방향으로의 필드 조작이 행해진 상태를 각각 4개의 <code>child node</code>로 만든다.
+
+문제가 제시한 최대 <code>depth</code>는 10이므로, 총 <code>4^10 = 1,048,576</code>개의 <code>node</code>가 만들어지게 된다는 말이다.
+
+
+## 구현
+
+### 게임 필드(맵) 구현
+
+필드, 즉 게임 맵은 간단하게 <code>2D int 배열</code>로 구현할 수 있다. 이 경우, 맵 표현은 아래와 같이 정의하도록 한다.
+
+| int | input | 설명 |
+| --- | ----- | --- |
+| 0 | . | 빈 공간 |
+| 1 | # | 벽 |
+| 2 | O | 구멍 |
+
+그런 후, 사용자 입력을 받아서 만들어둔 배열에 넣어주면 된다.
+
+{% highlight cpp %}
+int w, h; // w == M, h == N. 이해하기 쉽도록 width와 height로 표기
+int map[10][10]; // map[x][y] == (x,y) 좌표의 상황
+int rx, ry, bx, by, ox, oy;
+
+cin >> h >> w;
+
+for(int y = 0 ; y < n ; y++) {
+	for(int x = 0 ; x < m ; x++) { 
+		char input;
+		cin >> input;
+		if(input == '.') map[x][y] = 0;
+		if(input == '#') map[x][y] = 1;
+		if(input == 'O') { map[x][y] = 2; ox = x ; oy = y; }
+		if(input == 'R') { rx = x ; ry = y; }
+		if(input == 'B') { bx = x ; by = y; }
+	}
+}
+{% endhighlight %}
+
+
+
+### 게임 로직 구현
+
+우선, 함수를 먼저 만들어보도록 하자.
+
+{% highlight cpp %}
+void move_ball(int map[10][10], int *posx, int *posy, int xdir, int ydir);
+{% endhighlight %}
+
+이 함수로 현재 게임 맵 상태 <code>map</code>와 공의 위치 <code>posx, posy</code>를 받고 방향 변수 <code>xdir, ydir</code>를 받아서 굴려주는 역할을 할 것이다.
+
+이때, xdir, ydir 변수는 각각 -1, 0, 1중 하나의 값을 가지게 되는 방향 변수이며, 아래와 같이 생각하면 된다.
+
+| xdir | ydir | 방향 |
+| 0 | 1 | 아래 |
+| 0 | -1 | 위 |
+| 1 | 0 | 오른쪽 |
+| -1 | 0 | 왼쪽 |
+
+<code>return</code>값은 존재하지 않지만, posx와 posy를 포인터로 받아서 직접 수정해줄 것이다.
+
+{% highlight cpp %}
+while(map[*posx + xdir][*posy + ydir] == 0) { // 주어진 방향의 다음칸 확인하며 전진
+	*posx += xdir;
+	*posy += ydir;
+}
+if(map[*posx + xdir][*posy + ydir] == 2) { // 다음칸이 구멍일 경우, 한칸 더 전진 후 함수 종료
+	*posx += xdir;
+	*posy += ydir;
+}
+{% endhighlight %}
+
+단순한 원리의 작동 방식이다. 주어진 posx, posy 방향이 빈 공간일 시 해당 방향으로 한칸씩 전진한다. 루프가 끝난 시점에서 해당 방향의 다음칸이 구멍(<code>2</code>)일 경우, 공을 구멍 위에 위치시키고 함수를 종료한다.
+
+자, 이제 기본적인 세팅은 끝났다. 이제 본격적으로 DFS를 적용하여 문제를 풀어보도록 하자.
+
+
+## DFS
+
+참고자료: [https://velog.io/@sohi_5/algorithmDFS](https://velog.io/@sohi_5/algorithmDFS)
+
+우선, 게임판의 상태를 정의해야 한다. 상태 하나하나가 우리의 <code>node</code>가 될 것이기 때문이다. 게임판의 상태를 저장하기 위해서는 우선 변화하는것과 변화하지 않는 것을 구분할 필요가 있다.
+
+구슬 탈출 게임에서 벽과 빈 공간, 그리고 구멍의 위치는 절대 변화하지 않는다. 게임 내에서 변화하는 것은 빨강공과 파랑공의 위치 뿐이다.
+
+즉, 게임의 상태는 빨간공, 파란공의 x값과 y값이 게임의 상태일 것이다. 여기에 추가적으로, 게임의 <code>depth</code>, 즉 움직임 수까지 합쳐서 <code>state</code>를 표현하도록 하자.
+
+{% highlight cpp %}
+typedef struct _state {
+	int depth;
+	int rx, ry, bx, by;
+} State;
+{% endhighlight %}
+
