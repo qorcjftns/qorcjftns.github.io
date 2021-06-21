@@ -3,6 +3,12 @@
 <html lang="en-us">
 
   {% include head.html %}
+  <style>
+	@media (min-width: 49rem)
+		.container>* {
+		max-width: 42rem;	
+	  }
+  </style>
 
   <body class="{{ page.layout }}{% if page.url == '/' %} home{% endif %}">
 
