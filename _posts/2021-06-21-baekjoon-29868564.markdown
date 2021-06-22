@@ -1,0 +1,254 @@
+---
+layout: post
+type:   posts
+title:  "[백준 알고리즘 풀이][C++] 29868564: 뱀"
+date:   "2021-06-22"
+categories:
+  - "백준 알고리즘"
+tags:
+  - 백준
+  - 알고리즘
+  - 삼성
+  - Brute-Force
+  - 구현
+  - C++
+---
+
+## 기본 개념
+[https://www.acmicpc.net/problem/29868564](https://www.acmicpc.net/problem/29868564)<br/>
+뱀 게임 또한 이전 문제들과 같이 2D Plane에서 진행되고 상하좌우의 움직임이 일어나는 게임이다. 여기서 이전과 다른점은 사용자 조작이 없어도 게임은 진행이 된다는 점이다.
+
+1초에 한번씩 뱀은 앞으로 나아가고, 사용자는 특정 타이밍에 방향 지시를 내린다. 뱀이 사과를 먹는 순간 뱀의 길이가 하나씩 늘어나게 된다.
+
+본 문제는 이전 문제들과 같이 다양한 경우의 수를 따지는것이 아닌, 단순하게 시뮬레이션을 돌리는 문제이다.
+
+
+## 구현
+
+### 게임 필드(맵) 구현
+이번에는 이전과 다르게 게임 필드를 따로 만들지 않는다. 다만, 필드의 크기와 사과 위치만 입력받도록 한다.
+
+또한, 이번 문제에서 좌표 개념이 자주 쓰이기 때문에 간단한 <code>구조체</code>를 만들어두도록 한다.
+{% highlight cpp %}
+typedef struct _pos {
+	int x, y;
+} Pos;
+{% endhighlight %}
+
+{% highlight cpp %}
+int n, ac, ax, ay;
+vector<Pos> apples;
+cin >> n >> ac;
+for(int i = 0 ; i < ac ; i++) {
+	cin >> ax >> ay;
+	apples.push_back({ax, ay});
+}
+{% endhighlight %}
+
+그 이후에는 이제 유저의 방향 전환 입력이 들어오는데, 우리는 입력을 따로 미리 저장해두지 않고 그때그때 받아서 쓸 예정이다. 사용자 입력 개수 <code>L</code>값만 받아두도록 한다.
+{% highlight cpp %}
+int L;
+cin >> L;
+{% endhighlight %}
+
+
+### 게임 로직 구현
+
+#### 뱀의 움직임
+우선, 뱀의 움직임을 표현해줄 방법을 생각해보자. 다양한 자료구조중 뱀의 움직임에 가장 가까운 것은 queue라고 생각한다. 선입 선출의 개념으로 뱀의 움직임을 최대한 재현할 수 있다. 또한, 현재 뱀이 바라보고 있는 방향 또한 dir 변수로 미리 마킹해두도록 한다.
+
+{% highlight cpp %}
+int dirs[4] = { {1, 0}, {0, 1}, {-1, 0}, {0, -1} };
+int dir = 0;
+int sx = 0, sy = 0;
+queue<Pos> snaque;
+
+snaque.push({sx, sy});
+{% endhighlight %}
+
+여기서 dirs 함수는 기존과 다르게 우/하/좌/상 으로 시계방향으로 순서를 세팅해두었으며, 이는 뱀의 움직임 조작이 오른쪽/완쪽으로 회전시키는 형식으로 주어지기 때문이다. 아래와 같은 표를 참고하면 쉬운 이해가 가능하다.
+| 회전방향 | 현재 dir | 회전 후 dir |
+| ------- | -------- | --- |
+| 오른쪽 | dir | dir = (dir + 1) % 4 |
+| 왼쪽 | dir | dir = (dir - 1) % 4 |
+
+굳이 if문으로 일일히 변경할 필요 없이 손쉽게 방향 전환이 가능하다는 의미이다.
+
+뱀이 한칸 움직이는 원리는 아래와 같이 작성할 수 있다.
+
+{% highlight cpp %}
+sx += dirs[dir][0]; sy += dirs[dir][1];
+snaque.push({sx, sy}); // 머리 추가
+snaque.pop(); // 꼬리 제거
+{% endhighlight %}
+
+
+#### 뱀의 충돌
+우선 뱀의 충돌은 크게 세가지를 생각할 수 있다.
+
+1. 사과에 충돌
+2. 뱀의 몸통에 충돌
+3. 필드 밖으로 나감
+
+우선 첫번째, 사과 충돌을 구현해보자. 위에 구현한 뱀의 이동 로직에 이어서 작성하면 아래와 같이 나온다.
+{% highlight cpp %}
+sx += dirs[dir][0]; sy += dirs[dir][1];
+
+bool ah = false; // apple hit
+for(int i = 0 ; !ah && i < ac ; i++) {
+	if(apples[i].x == sx && apples[i].y == sy) {
+		apples.erase(apples.begin() + i);
+		ah = true;
+	}
+}
+
+snaque.push({sx, sy}); // 머리 추가
+if(!ah) snaque.pop(); // 꼬리 제거 (사과를 먹지 않았을 경우에만)
+{% endhighlight %}
+
+우선, 뱀이 사과를 먹는 것은 머리가 부딪치는 경우 뿐이다. 따라서 현재 머리의 위치와 각 사과의 위치를 비교하여 충돌 체크를 해주면 된다. 충돌 처리된 사과는 더이상 사용되지 않으므로 삭제해준다.
+
+그리고 두번째, 뱀의 몸통과의 충돌 판정이다. 여기서 뱀의 queue를 iterate해주면서 판정을 해야 하는데, queue는 iterate해주기가 까다로운 물건이다. 아니, 애초에 iterator 자체가 존재하지 않아 난감하다.
+따라서, 조금 돌아가는 길이지만 편법을 사용하여 진행하도록 한다.
+
+{% highlight cpp %}
+sx += dirs[dir][0]; sy += dirs[dir][1];
+
+...
+
+snaque.push({sx, sy}); // 머리 추가
+snaque.pop(); // 꼬리 제거
+
+bool hit = false;
+for (size_t i = 0; !hit && i < snaque.size() ; ++i) {
+	Pos body = snaque.front();
+	snaque.pop();
+	snaque.push(body);
+	if(i != snaque.size() - 1 && curx == body.x && cury == body.y) {
+		hit = true;	
+	}
+}
+{% endhighlight %}
+
+그리고 마지막으로 벽 충돌 판정은 저번 2048 문제에서 사용했던 <code>is_validpos</code> 함수를 그대로 사용한다.
+
+
+{% highlight cpp %}
+sx += dirs[dir][0]; sy += dirs[dir][1];
+if(is_validpos(n, sx, sy)) hit = true;
+{% endhighlight %}
+
+이로서 기본적인 충돌 판정 세가지 로직은 완료되었다.
+
+
+#### 게임 진행
+
+우선, 루프를 만들어 시작해주자. 루프가 한바퀴 도는 것을 실제 게임에서의 1초라고 가정하고 진행한다.
+
+{% highlight cpp %}
+int sec = 0;
+bool hit = false;
+while(!hit) {
+	sec += 1;
+	
+	...
+}
+{% endhighlight %}
+
+이제 마지막으로 남은 부분은 바로 사용자 입력을 받는 부분이다. 입력을 받는 타이밍은 이전에 입력받은 사용자 입력이 처리된 직후로 한다.
+아래와 같이 생각하면 편리하다:
+
+{% highlight cpp %}
+int sec = 0;
+bool hit = false;
+int mtime;
+char mdir;
+cin >> mtime >> mdir; // 초기 입력
+L -= 1;
+while(!hit) {
+	sec += 1;
+	if(mtime == sec) {
+		// 방향전환
+		if(mdir == 'L') dir = (dir - 1) % 4;
+		else if(mdir == 'R') dir = (dir - 1) % 4;
+		
+		if(L > 0) {
+			cin >> mtime >> mdir;
+			L -= 1;	
+		} // else일때는 아무것도 하지 않는다.
+	}
+	...
+}
+{% endhighlight %}
+
+여기서 입력이 모두 끝났을때 (<code>L == 0</code>)일때 아무것도 하지 않는 이유는 어차피 가만히 두어도 (<code>mtime == sec</code>) 조건이 충족될 수가 없기 때문이다. 주어지는 입력이 시간 순서대로 주어진다는 점을 이용한 코드 간결화이다.
+
+자, 이제 입력도 끝났으니 위에 만들어둔 로직을 추가해주면 아래와 같은 결과물이 나온다:
+
+
+{% highlight cpp %}
+int sec = 0;
+bool hit = false;
+int mtime;
+char mdir;
+cin >> mtime >> mdir; // 초기 입력
+L -= 1;
+while(!hit) {
+	sec += 1;
+	
+	// 입력 로직
+	if(mtime == sec) {
+		// 방향전환
+		if(mdir == 'L') dir = (dir - 1) % 4;
+		else if(mdir == 'R') dir = (dir - 1) % 4;
+		
+		if(L > 0) {
+			cin >> mtime >> mdir;
+			L -= 1;	
+		} // else일때는 아무것도 하지 않는다.
+	}
+	
+	// 이동 로직
+	sx += dirs[dir][0]; sy += dirs[dir][1];
+	
+	// 사과 충돌 로직
+	bool ah = false; // apple hit
+	for(int i = 0 ; !ah && i < ac ; i++) {
+		if(apples[i].x == sx && apples[i].y == sy) {
+			apples.erase(apples.begin() + i);
+			ah = true;
+		}
+	}
+
+	snaque.push({sx, sy}); // 머리 추가
+	if(!ah) snaque.pop(); // 꼬리 제거 (사과를 먹지 않았을 경우에만)
+	
+	if(is_validpos(n, sx, sy)) hit = true;
+
+	for (size_t i = 0; !hit && i < snaque.size() ; ++i) {
+		Pos body = snaque.front();
+		snaque.pop();
+		snaque.push(body);
+		if(i != snaque.size() - 1 && curx == body.x && cury == body.y) {
+			hit = true;	
+		}
+	}
+}
+
+cout >> sec >> endl;
+{% endhighlight %}
+
+
+## 마무리
+
+| 메모리 | 시간 |
+| ----- | --- |
+| 2024KB | 0ms |
+
+채점 결과는 깔끔하게 나오고 정답 표기가 되었다.
+
+이번 문제는 개인적으로는 굉장히 쉬운 난이도였기 때문에 코드를 조금 간결하게 쓰는 방법을 생각하며 작성하였다. 단 한 부분 코드를 의도적으로 복잡하게 쓴 것이 바로 뱀이 이동하게 하는 <code>snaque</code> 구조였는데, 사실 queue를 사용하지 않는 것이 충돌 판정 체크 등에 더 유리했을지도 모른다. <code>list</code> STL의 경우에는 iteration과 함꼐 맨 앞, 맨 뒤 요소를 가져올 수 있는 로직도 포함되어 있어서 사실은 이 경우에 효율적으로는 더 적합한 구조이다.
+
+다만, 뱀의 움직임이라는 요소가 너무나도 <code>queue</code>의 사용에 걸맞다고 판단하였고, 중간에 골치아픈 push/pop을 반복하는 반복문을 사용하더라도 <code>queue</code>를 사용해야겠다고 생각하여 이렇게 작성해보았다. 코드의 효율적인 관점에서는 조금 멀어졌지만 만족하고 있다.
+
+
