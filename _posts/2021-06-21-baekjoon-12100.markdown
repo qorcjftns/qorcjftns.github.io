@@ -1,0 +1,218 @@
+---
+layout: post
+type:   posts
+title:  "[백준 알고리즘 풀이][C++] 12100: 2048 (Easy)"
+date:   "2021-06-21"
+categories:
+  - "백준 알고리즘"
+tags:
+  - 백준
+  - 알고리즘
+  - 삼성
+  - Brute-Force
+  - 구현
+  - 그래프이론
+  - C++
+---
+
+## 기본 개념
+[https://www.acmicpc.net/problem/12100](https://www.acmicpc.net/problem/12100)<br/>
+2048이라는 게임은 처음 나왔을때 나에게는 신선한 충격이였다. 당시에 학교에서 알고리즘 공부를 하던 나에게는 일상에 새로운 활력소까지도 되어주었다.
+2014년 당시에는 그래서 <code>Java</code>로 간단한 2048 게임을 클론해서 만들어봤을 정도이다. [https://github.com/qorcjftns/JAVA2048clone](https://github.com/qorcjftns/JAVA2048clone)
+
+우선 게임의 로직은 단순하다. 이전 문제였던 [구슬 탈출 2](http://qorcjftns.github.io/%EB%B0%B1%EC%A4%80%20%EC%95%8C%EA%B3%A0%EB%A6%AC%EC%A6%98/2021/06/21/baekjoon-13460.html)과 비슷하게 사용자 조작은 네 방향으로만 이루어진다. 기본적인 움직임은 구슬 탈출과 비슷하지만, 이번에는 다뤄야할 문제가 조금 더 많다.
+
+숫자 블록이 움직이다가 다른 같은 숫자 블록과 부딪치게 되면 두개의 블록이 합쳐지고 숫자가 두배로 증가한다. 여기서, 말이 두배라고 되어 있지만 사실상 두 블록을 더해준다고 생각하면 편리하다.
+
+문제의 핵심은 5번 이동시켜 얻을 수 있는 최대 숫자를 구하는 것. 어찌됬던 5번은 움직여야 하므로 여기서는 <code>DFS</code>를 사용하는 것이 의미가 없다. 오히려 <code>BFS</code>를 쓰는 것이 코드를 짜는데 효율적일 것이다. 다만, 필자는 여기에서는 단순하게 루프를 이용한 Brute force 기법으로 무작정 풀게 되었다.
+
+<code>구슬 탈출 2</code> 문제와 마찬가지로 우선은 게임의 구현을 먼저 시작해보도록 하자.
+
+
+## 구현
+
+### 게임 필드(맵) 구현
+
+게임 필드는 구슬 탈출보다 훨씬 간결한 구조이다. 이번에도 <code>2D int 배열</code>을 사용할 것이며, 가능한 최대 보드 크기는 20x20이다.
+이 경우, 0은 빈칸, 다른 숫자는 숫자 블록을 의미한다.
+
+우선 배열을 만들고 사용자 입력을 받아보도록 하자.
+
+{% highlight cpp %}
+int n;
+int board[20][20];
+cin >> n;
+for(int y = 0  y < n ; y++) {
+	for(int x = 0 ; x < n ; x++) {
+		cin >> board[x][y];
+	}
+}
+{% endhighlight %}
+
+구슬 탈출과 다르게 입력이 그대로 보드에 들어가면 되기 때문에 입력값 받는 것이 무척이나 간편해진다.
+
+
+### 게임 로직 구현
+{% highlight cpp %}
+int dirs[4][2] = { {1,0},{-1,0},{0,1},{0,-1} }; // 방향 변수
+void move_board(int board[20][20], int n, int dir);
+{% endhighlight %}
+
+우선 보드의 움직임을 컨트롤해줄 함수 하나를 구현해준다. 이때, 방향을 가로와 세로로 나누어 구분해서 로직을 짜도록 해보자.
+
+{% highlight cpp %}
+if(dir == 0 || dir == 1) { // up and down
+	for(int j = 0 ; j < n ; j++) {
+		if(dir == 0) { // up
+			for(int i = 1 ; i < n ; i++) {
+				move_panel(board, n, dir, i, j);
+			}
+		} else { // down
+			for(int i = n - 2 ; i >= 0 ; i--) {
+				move_panel(board, n, dir, i, j);
+			}
+		}
+		for(int i = 0 ; i < n ; i++) {
+			if(board[i][j] % 2 == 1) board[i][j] = board[i][j] + 1;
+		}
+	}
+} else {
+	for(int i = 0 ; i < n ; i++) {
+		if(dir == 2) { // left
+			for(int j = 1 ; j < n ; j++) {
+				move_panel(board, n, dir, i, j);
+			}
+		} else { // right
+			for(int j = n - 2 ; j >= 0 ; j--) {
+				move_panel(board, n, dir, i, j);
+			}
+		}
+		for(int j = 0 ; j < n ; j++) {
+			if(board[i][j] % 2 == 1) board[i][j] += 1;
+		}
+	}
+}
+{% endhighlight %}
+
+우선 각각 끝부분에 있는 패널은 움직이지 않도록하여 총 n-1개의 패널만 확인하도록 하였다. <code>board[x][y] % 2 == 1</code>을 체크하는 이유는 다음 섹션에서 설명하도록 한다.
+
+각 방향별로 먼저 처리할 순서가 다르기 때문에 보기 쉽게 4가지 다 따로 처리해주도록 하였다. 조금 더 코드를 간결화 시키는 방법도 있겠지만, 가독성이 조금 문제가 생길 것 같아서 더이상의 최적화는 하지 않았다.
+
+패널을 움직이는 순서를 설명하기 위하여 우선 위로 움직이는 것을 예시로 삼아보도록 하자.
+
+위로 이동시킬 경우, 우선은 각 column별로 위에서 아래로 훑어 내려와야한다. 이때, 맨 위 패널은 더이상 위로 움직일 곳이 없으므로 그냥 두고 다음 패널부터 이동을 시작한다.
+어떤 column부터 이동시킬지는 전혀 상관이 없는데, 각 column은 다른 column의 패널에 영향을 끼치지 않기 때문이다.
+
+이에 따라서, 아래와 같이 분류해 나타낼 수 있다.
+
+| 방향 | 첫번째 루프 방향 | 두번째 루프 방향 | 두번째 루프 범위 |
+| --- | -------------- | -------------- | -------------- |
+| 위 | 가로 | 세로 (위->아래) | 1 ~ N-1 |
+| 아래 | 가로 | 세로 (아래->위) | 0 ~ N-2 |
+| 오른쪽 | 세로 | 가로 (오른쪽->왼쪽) | 0 ~ N-2 |
+| 왼쪽 | 세로 | 가로 (왼쪽->오른쪽) | 1 ~ N-1 |
+
+이제 <code>move_panel</code> 함수를 구현해보자.
+
+{% highlight cpp %}
+bool is_validpos(int n, int i, int j) {
+	return (i >= 0 && i < n) && ( j >= 0 && j < n);
+}
+void move_panel(int board[20][20], int n, int dir, int x, int y) {
+	int panel = board[x][y]; // 현재 패널 값 추출
+	board[x][y] = 0; // 현재 패널 빈공간으로 만들기
+	while(is_validpos(n, x + dirs[dir][0], y + dirs[dir][1]) && board[x + dirs[dir][0]][y + dirs[dir][1]] == 0) {
+		x = x + dirs[dir][0]; y = y + dirs[dir][1];
+	}
+	if(is_validpos(n, x + dirs[dir][0], y + dirs[dir][1]) && board[x + dirs[dir][0]][y + dirs[dir][1]] == panel) {
+		board[x + dirs[dir][0]][y + dirs[dir][1]] += (panel - 1);
+	} else {
+		board[i][j] = panel;
+	}
+}
+{% endhighlight %}
+
+<code>is_validpos</code> 함수를 먼저 보면, 단순하게 특정 좌표가 현재 게임 보드 내에 존재 하는지 아닌지를 판단하는 함수이다. 자주 쓰일 함수이기 때문에 보관해두면 좋다.
+
+<code>move_panel</code> 함수의 내부는 복잡해보이지만 단순한 구조이다. 우선 주어진 패널의 값을 저장해두고 해당 패널을 빈칸으로 만든다. 그리고 주어진 방향으로 계속 이동시켜주다가 숫자 패널이 나오면 루프를 중지시킨다.
+만약, 다음 패널의 숫자가 현재 패널의 숫자와 일치한다면, 두개의 패널을 합쳐준다. 여기서 주의해야할 점이 있는데, 단순히 합치기만 하면 안된다는 점이다.
+
+2048 게임에서는 한번 이동에서 합쳐진 블록은 더이상 다른 블록과 합쳐질 수 없기 때문에, 방금 합쳐진 블록은 더이상 합쳐질 수 없다고 마킹해두어야 한다. 마킹을 편리하게 하기 위하여, 임의로 패널의 값에서 1을 빼주기로 하였다. 즉, 2 패널 두개가 합쳐지면 원래 4 패널이 되어야 하지만, 여기서는 3 패널로 만들어 주게 된다.
+
+2 2 2 2
+
+위와 같은 상태에서 왼쪽으로 <code>move_board</code>로 이동할 경우, 
+
+3 3 0 0
+
+과 같은 결과물이 나오게 된다는 말이다.
+
+따라서, <code>move_board</code>에서는 다시한번 모든 값들을 확인하며 홀수 값들에 1씩 더해주는 과정을 거치게 된 것이다. 본래 2048 게임의 모든 패널은 2의 급수, 즉 짝수여야 하는데 홀수로 나타난 것이 있다면 단순하게 마킹을 위한 처리과정이였다는 의미이기 때문이다.
+
+
+## 알고리즘
+여기서부터는 단순한 알고리즘 시간이다.
+
+우선 생각나는대로 코드를 만들어보면 아래와 같이 나타낼 수 있을 것 같다.
+{% highlight cpp %}
+int moves[5];
+int max = 0;
+
+for(moves[0] = 0 ; moves[0] < 4 ; moves[0]++) {
+	for(moves[1] = 0 ; moves[1] < 4 ; moves[1]++) {
+		for(moves[2] = 0 ; moves[2] < 4 ; moves[2]++) {
+			for(moves[3] = 0 ; moves[3] < 4 ; moves[3]++) {
+				for(moves[4] = 0 ; moves[4] < 4 ; moves[4]++) {
+					int temp_board[20][20];
+					copy_board(board, temp_board, n);
+					move_board(temp_board, n, moves[0]);
+					move_board(temp_board, n, moves[1]);
+					move_board(temp_board, n, moves[2]);
+					move_board(temp_board, n, moves[3]);
+					move_board(temp_board, n, moves[4]);
+					int cur_max = check_max(temp_board, n);
+					if(cur_max > max) max = cur_max;
+				}
+			}
+		}
+	}
+}
+cout << max << endl;
+{% endhighlight %}
+
+어차피 5번밖에 움직이지 못하기 때문에 이렇게만 만들어도 아주 잘 동작하게 된다.
+
+<code>check_max</code> 함수와 <code>copy_board</code> 함수는 아래와 같이 표현하여 만들어 주었다.
+
+{% highlight cpp %}
+int **copy_board(int board[20][20], int result[20][20], int n) {
+    // copy
+    for(int i = 0 ; i < n ; i++) {
+		result[i] = new int[20];
+		for(int j = 0 ; j < n ; j++) { result[i][j] = board[i][j]; }
+	}
+    return result;
+}
+int check_max(int board[20][20], int n) {
+	int max = 0;
+	for(int i = 0 ; i < n ; i++) {
+		for(int j = 0 ; j < n ; j++) {
+			if(board[i][j] > max) max = board[i][j];
+		}
+	}
+	return max;
+}
+{% endhighlight %}
+
+## 마무리
+
+| 메모리 | 시간 |
+| ----- | --- |
+| 4000KB | 44ms |
+
+채점 결과는 깔끔하게 나오고 정답 표기가 되었다.
+본 문제를 풀 당시, 아직 백준 문제 스타일에 익숙하지 않아서 중구난방으로 고생했던 기억이 있다.
+
+그래서 구플 탈출 문제와 조금 스타일이 다르게 recursion을 사용하지 않고 구현해보았는데, 그래서 그런지 메모리와 시간이 비교적 높게 나왔다.
+
+다른 사람들에 비하면 높은 편은 아니지만, 그래도 만족하는 편이다.

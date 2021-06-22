@@ -1,0 +1,21 @@
+---
+layout: post
+type:   posts
+title:  "20210622 잡담"
+date:   "2021-06-22"
+categories:
+  - "아이디어"
+tags:
+  - 잡담
+  - 아이디어
+---
+
+## 일
+
+
+## 취미
+
+
+## 공부
+
+
