@@ -2,7 +2,7 @@
 layout: post
 type:   posts
 title:  "[백준 알고리즘 풀이][C++] 13458: 시험 감독"
-date:   "2021-06-22"
+date:   "2021-06-22 16:40:21"
 categories:
   - "백준 알고리즘"
 tags:

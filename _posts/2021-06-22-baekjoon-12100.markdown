@@ -2,7 +2,7 @@
 layout: post
 type:   posts
 title:  "[백준 알고리즘 풀이][C++] 12100: 2048 (Easy)"
-date:   "2021-06-22"
+date:   "2021-06-22 10:30:22"
 categories:
   - "백준 알고리즘"
 tags:
