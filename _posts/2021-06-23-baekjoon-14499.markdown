@@ -1,0 +1,128 @@
+---
+layout: post
+type:   posts
+title:  "[백준 알고리즘 풀이][C++] 14499: 주사위 굴리기"
+date:   "2021-06-23 14:31:20"
+categories:
+  - "백준 알고리즘"
+tags:
+  - 백준
+  - 알고리즘
+  - 삼성
+  - 시뮬레이션
+  - 구현
+  - C++
+---
+
+## 기본 개념
+[https://www.acmicpc.net/problem/14499](https://www.acmicpc.net/problem/14499)<br/>
+이번 문제 또한 이전 [뱀 문제](http://qorcjftns.github.io/%EB%B0%B1%EC%A4%80%20%EC%95%8C%EA%B3%A0%EB%A6%AC%EC%A6%98/2021/06/22/baekjoon-29868564.html)와 비슷한 형식의 문제이다. 주어진 환경을 정확하게 구현하고 사용자의 입력을 그대로 시뮬레이션해주는 방식이다.
+
+게임의 구조는 단순한데, 주사위의 움직임을 계산해주면 끝나는 문제이다. 주사위의 숫자가 필드로 덮어씌워지는 구조 때문에 필드 또한 만들어주어야 한다.
+
+## 구현
+
+### 게임 필드(맵) 구현
+구조는 단순하다. 이전 문제들과 마찬가지로 <code>2D int 배열</code>을 사용해서 맵을 구현해준다. 이번에는 정사각형 맵이 아니라 직사각형 형태이기 때문에 N과 M을 따로 보관해준다.
+
+{% highlight cpp %}
+int n, m, k, x, y, cu, ce, cn;
+int side[6] = {0,};
+int map[20][20];
+ce = 3; // 동쪽 3
+cu = 1; // 윗면 1
+cn = 2; // 북쪽 2
+cin >> n >> m; // 맵 크기
+cin >> y >> x; // 주사위 초기 좌표
+cin >> k; // 입력 개수
+for(int y = 0 ; y < n ; y++) {
+	for(int x = 0 ; x < m ; x++) {
+		cin >> map[x][y];
+	}
+}
+{% endhighlight %}
+
+우선 기존 문제들과 같이 맵 상황을 입력받는다. 그리고 주사위의 기본값을 입력받는데, 간단하게 주사위의 윗면, 동쪽, 북쪽 방향의 숫자를 보관해둘 것이다. 위치는 <code>(0,0)</code>이 기본값으로 주어졌다.
+
+여기서 주의할 점은, 주사위의 각 면의 번호와 실제로 그 면에 들어가는 값은 별개라는 것이다. 예를 들어, 주사위의 1번 면의 초기 숫자는 0이다. 이 1번 면이 바닥에 닿는 순간, 바닥의 숫자가 1번 면으로 새겨지게 된다는 것이다. 따라서 주사위의 각 면의 숫자를 보관하는 <codde>int side[6]</code> 변수도 만들어주면 된다.
+
+
+### 주사위 이동 구현
+
+이제 주사위의 이동을 구현해보자. 주사위 움직임은 동서남북 4가지이며, 각각에 맞게 움직임을 조정해주면 된다.
+
+{% highlight cpp %}
+bool is_validpos(int n, int m, int x, int y) {
+	return (x >= 0 && x < m) && ( y >= 0 && y < n);
+}
+int dirs[4][2] = { {1, 0}, {-1, 0}, {0, -1}, {0, 1} };
+
+/**
+ * map, n, m: 맵의 상태 및 크기
+ * dir: 주사위 이동 방향
+ * x, y, ce, cu, cn, side: 주사위 위치 및 상태
+ */
+void move_dice(int map[20][20], int n, int m, int dir, int *x, int *y, int *ce, int *cu, int *cn, int side[6]) {
+	if(!is_validpos(n, m, *x + dirs[dir-1][0], *y + dirs[dir-1][1]) {
+		return;
+	}
+	*x += dirs[dir-1][0];
+	*y += dirs[dir-1][1];
+	int temp;
+	switch(dir) {
+		case 1:
+			temp = *ce; *ce = *cu; *cu = (7 - temp); 
+			break;
+		case 2:
+			temp = *ce; *ce = (7 - *cu); *cu = temp; 
+			break;
+		case 3:
+			temp = *cn; *cn = *cu; *cu = (7 - temp); 
+			break;
+		case 4:
+			temp = *cn; *cn = (7 - *cu); *cu = temp; 
+			break;
+	}
+	
+	if(map[*x][*y] == 0) map[*x][*y] = side[6 - *cu];
+	else {
+		side[6 - *cu] = map[*x][*y];
+		map[*x][*y] = 0;
+	}
+}
+{% endhighlight %}
+
+우선 <code>is_validpos</code> 함수를 이전 버전보다 개조하여 직사각형 맵에도 적용 가능하도롣 조치하였다. 그리고 <code>dirs</code> 변수를 만들어서 사용하기 쉽도록 해주었다.
+
+그 다음 <code>move_dice</code> 함수는 단순한 주사위의 원리를 사용한다. 주사위의 한 면과 정 반대의 면을 합하면 7이 되는 원리를 사용하여 주사위를 굴린 후 주사위의 상태를 마킹해준다.
+
+이 과정에서는 동서남북 움직임에 따라 변수 치환할 것이 다 다르기 때문에 위와 같이 <code>switch</code>문을 사용하여 표현하였다.
+
+그리고나서 만약 이동한 위치의 바닥면의 숫자가 0일 경우에는 주사위의 숫자를 바닥에 복사하고, 0이 아닐 경우에는 바닥의 숫자를 주사위로 이동한다. 여기서 주의할 점은, 주사위에서 바닥으로 복사될때는 주사위 숫자를 0으로 만들지 않아야 한다는 것이다.
+
+
+## 사용자 입력
+자, 다시 사용자 입력을 받아보자. 이번에는 주사위의 움직임 부분이다. 이미 사용자 움직임 횟수인 K를 받아두었기 때문에 쉽게 진행할 수 있다.
+
+{% highlight cpp %}
+for(int i = 0 ; i < k ; i++) {
+	int dir;
+	cin >> dir;
+	move_dice(map, n, m, dir, &x, &y, &ce, &cu, &cn, side);
+	cout << cu << endl;
+}
+{% endhighlight %}
+
+이후, 입력을 받을때마다 주사위를 이동시키고 나서 주사위의 윗면을 출력해주면 된다.
+
+
+
+## 마무리
+
+| 메모리 | 시간 |
+| ----- | --- |
+| 2020KB | 44ms |
+
+이상하게도 다른 사람들에 비해 시간이 많이 높게 나온다. 보통 0ms로 풀리는 반면 나는 44ms가 걸리고 있었다.
+
+이유는 모르겠지만, 아마 주사위 처리 과정이 다르거나 input 처리과정이 다르기 때문일 것 같다.
