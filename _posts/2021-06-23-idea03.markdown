@@ -1,8 +1,8 @@
 ---
 layout: post
 type:   posts
-title:  "20210622 잡담"
-date:   "2021-06-22 17:21:01"
+title:  "20210623 잡담"
+date:   "2021-06-23 16:24:11"
 categories:
   - "아이디어"
 tags:
