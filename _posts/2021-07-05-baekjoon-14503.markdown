@@ -1,0 +1,141 @@
+---
+layout: post
+type:   posts
+title:  "[백준 알고리즘 풀이][C++] 14503: 로봇 청소기"
+date:   "2021-07-06 15:12:25"
+categories:
+  - "백준 알고리즘"
+tags:
+  - 백준
+  - 알고리즘
+  - 삼성
+  - 시뮬레이션
+  - Simulation
+  - C++
+---
+
+## 기본 개념
+[https://www.acmicpc.net/problem/14503](https://www.acmicpc.net/problem/14503)<br/>
+본 문제는 단순한 시뮬레이션 문제이기 때문에 큰 부담 없이 풀어볼 수 있다. 복잡한 알고리즘 대신 정확한 구현만이 문제를 푸는데 중요한 필요조건이다.
+
+## 맵 구현
+거의 모든 문제에서 그래왔듯이, 맵 배열을 만들어주도록 한다.
+{% highlight cpp %}
+int dir[4][2] = {{0, -1}, {1, 0}, {0, 1}, {-1, 0}};
+bool is_validpos(int w, int h, int i, int j) {
+	return (i >= 0 && i < w) && ( j >= 0 && j < h);
+}
+
+
+...
+int main() {
+	int map[50][50];
+	int w,h;
+	int rx, ry, rd;
+	...
+}
+{% endhighlight %}
+
+맵 변수와 맵 크기 변수, 그리고 구현에 필요한 is_validpos와 dir 변수를 언제나처럼 사용할 예정이다. 또한, rx, ry 변수는 로봇의 현재 위치를, 그리고 rd 변수는 로봇이 바라보는 방향을 가지게 된다.
+
+그리고 사용자 input을 받아보자.
+
+{% highlight cpp %}
+cin >> h >> w;
+cin >> ry >> rx >> rd;
+for(int y = 0 ; y < h ; y++) {
+	for(int x = 0 ; x < w ; x++) {
+		cin >> map[x][y];
+	}
+}
+{% endhighlight %}
+
+보다시피 이번 문제는 별다른 어려울것 없이 입력을 받아도 된다. 큰 어려움 없이 풀이가 진행되기 떄문일 것이다.
+
+
+## 로봇 움직임 표현
+자, 이제 로봇의 움직임을 표현해주어야 한다. 로봇의 작동원리는 문제에 아주 상세하게 표현되어 있다:
+1. 현재 위치를 청소한다.
+2. 현재 위치에서 현재 방향을 기준으로 왼쪽방향부터 차례대로 탐색을 진행한다.
+ a. 왼쪽 방향에 아직 청소하지 않은 공간이 존재한다면, 그 방향으로 회전한 다음 한 칸을 전진하고 1번부터 진행한다.
+ b. 왼쪽 방향에 청소할 공간이 없다면, 그 방향으로 회전하고 2번으로 돌아간다.
+ c. 네 방향 모두 청소가 이미 되어있거나 벽인 경우에는, 바라보는 방향을 유지한 채로 한 칸 후진을 하고 2번으로 돌아간다.
+ d. 네 방향 모두 청소가 이미 되어있거나 벽이면서, 뒤쪽 방향이 벽이라 후진도 할 수 없는 경우에는 작동을 멈춘다.
+
+이 조건을 구현하면 아래와 같을 것이다:
+
+{% highlight cpp %}
+int rot_count = 0;
+while(true) {
+	map[rx][ry] = 2; // 규칙 1
+	int left = (rd + 3) % 4;
+	if(is_validpos(w, h, rx + dir[left][0], ry + dir[left][1]) && map[rx + dir[left][0]][ry + dir[left][1]] == 0) { // 규칙 2-a
+		rx += dir[left][0];
+		ry += dir[left][1];
+		rd = left; rot_count = 0;
+	} else {
+		rd = left;
+		rot_count += 1; // 규칙 2-b
+		if(rot_count == 4) {
+			int back = (rd + 2) % 4;
+			if(is_validpos(w, h, rx + dir[back][0], ry + dir[back][1]) && map[rx + dir[back][0]][ry + dir[back][1]] != 1) { // 규칙 2-c
+				rx += dir[back][0];
+				ry += dir[back][1];
+				rot_count = 0;
+			} else { // 규칙 2-d
+				break;
+			}
+		}
+	}
+}
+{% endhighlight %}
+
+<code>rot_count</code> 변수는 로봇이 한 자리에서 몇번의 회전을 했는지 저장해둘 변수로, 0부터 시작하여 4까지 증가하게 된다.
+
+우선 <code>규칙 1</code>에 따라서, 현재 위치를 청소한다. 우리는 청소된 위치를 숫자 <code>2</code>로 표기하도록 한다.
+
+그리고 나서 <code>규칙 2</code>에 따라서 왼쪽 방향부터 탐색한다. 여기서 왼쪽 방향은 <code>(rd + 3) % 4</code>로 구할 수 있다. 왼쪽 방향이 만약 맵 범위 내의 좌표이고 해당 좌표가 청소되지 않은 빈 공간이면 <code>규칙 2-a</code>에 따라서 방향 전환하고 한칸 전진시켜주고 rot_count를 초기화시켜준다.
+
+만약 <code>규칙 2-a</code>를 실행하지 못했다면, <code>규칙 2-b</code>에 따라서 로봇의 방향만 전환하고 rot_count를 1 증가시키게 된다.
+
+이때, rot_count가 4인 경우에는 로봇의 뒷 방향을 확인해보아야 한다. 로봇의 뒤쪽, 즉 <code>(rd + 2) % 4</code> 방향이 만약 올바른 좌표이고 벽이 아니라면 <code>규칙 2-c</code>에 따라서 뒤로 한칸 후진시킨다. 또한 만약 뒤쪽이 벽이라서 후진이 불가능할 경우에는 <code>규칙 2-d</code>에 따라서 작동을 중지시켜준다.
+
+
+## 청소된 좌표 카운트
+복잡하게 생각할거 없이 그냥 좌표를 iterate 해주면서 카운팅만 해주면 된다.
+
+{% highlight cpp %}
+int count = 0;
+for(int y = 0 ; y < h ; y++) {
+	for(int x = 0 ; x < w ; x++) {
+		if(map[x][y] == 2) count++;
+	}
+}
+cout << count << endl;
+{% endhighlight %}
+
+## 마무리
+
+| 메모리 | 시간 |
+| ----- | --- |
+| 2020KB | 0ms |
+
+단순한 문제인만큼, 로봇의 움직임을 정확하게 구현하는것이 가장 중요한 부분이였다.
+
+공간복잡도는 고려하지 않고 만들었기 때문에 아무래도 고수들에 비하면 메모리 사용량이 조금은 높겠지만, 기본적으로는 큰 문제 없이 풀린 문제였다.
+
+필자는 로봇의 움직임을 루프로 표현할때 rotation까지 하나의 iteration으로 표현하였지만, 전체 루프 안에서 또다른 루프로 4가지 방향을 확인하는 아래와 같은 루프를 짜는 것도 방법일 것이
+
+{% highlight cpp %}
+while(true) {
+	...
+	for(int d = 0 ; d < 4 ; d++) {
+		rd = (rd + 1) % 4;
+		...
+	}
+	...
+}
+{% endhighlight %}
+
+
+
