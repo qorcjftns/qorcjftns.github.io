@@ -1,0 +1,190 @@
+---
+layout: post
+type:   posts
+title:  "[백준 알고리즘 풀이][C++] 14502: 연구소"
+date:   "2021-07-06 14:37:23"
+categories:
+  - "백준 알고리즘"
+tags:
+  - 백준
+  - 알고리즘
+  - 삼성
+  - 시뮬레이션
+  - 브루트포스
+  - Simulation
+  - C++
+---
+
+## 기본 개념
+[https://www.acmicpc.net/problem/14502](https://www.acmicpc.net/problem/14502)<br/>
+이번 문제는 기본적으로 시뮬레이션 문제에 가깝다. 벽을 세운 후, 바이러스가 퍼져나가는 상황을 시뮬레이션 해야 한다.벽을 세우는 부분은 일단 어쩔수없이 <code>브루트포스</code> 방식으로 하나하나 대입해 보아야 한다. 어느 곳에 벽을 두는 것이 맞을지는 일단 벽을 놓아보아야 확인할 수 있기 때문이다.
+
+바이러스가 퍼져나가는 부분은 <code>queue</code>를 사용하여 진행해줄 예정이다. 바이러스들을 전부 <code>queue</code>로 넣은 후, 4방향으로 진행시키고 진행된 바이러스를 <code>queue</code>에 다시 넣어준다.
+
+
+## Lab 클래스 만들기
+이번에는 조금 특이하게 C++의 클래스 개념을 사용해서 만들어볼 예정이다. 이렇게 만드는 큰 의미는 없고... 예전에 본인이 이렇게 풀어둔 코드를 발견해서 여기 옮겨 적어보는 것일 뿐이다.
+
+{% highlight cpp %}
+typedef struct _pos {
+	int x, y;
+} Pos;
+
+class Lab {
+public:
+	int map[8][8];
+	vector<Pos> viruses;
+	vector<Pos> pillars;
+	vector<Pos> empties;
+	int n, m;
+	
+	...
+}
+{% endhighlight %}
+
+우선 자주 쓰이게 될 <code>Pos</code> 구조체를 하나 만들어 두었고, 이를 사용하여 위와 같은 Lab을 구성하였다.
+
+<code>map</code> 배열은 기존에 사용하던것과 거의 같으며, 추가적으로 초기 바이러스, 기둥의 위치를 담아둘 <code>vector</code> 또한 만들어두었다. 이 벡터들은 추후에 맵을 초기화 시켜줄 때 사용하려고 남겨둔 것이다.
+
+<code>empties</code> 벡터의 존재가 여기서 왜 필요한지 의문인 분들도 계실텐데, 일단 최대한 루프를 줄이고 싶었다. 본 문제는 기둥 세개를 빈 공간에 설치하게 하는 문제이지 모든 칸을 다 확인해봐야 하는 문제가 아니다. 따라서, 우리는 빈 공간의 위치만 기억해두고 해당 위치에 기둥을 놓기만 하면 되는 것이다.
+
+
+자, 우선 사용자 input을 받아야 하는데, 조금 코드를 간단하게 하기 위하여 <code>constructor(생성자)</code> 내부에 사용자 입력을 받는 코드도 포함시키도록 한다:
+
+{% highlight cpp %}
+Lab() {
+	cin >> n >> m;
+	for(int y = 0 ; y < n ; y++) {
+		for(int x = 0 ; x < m ; x++) {
+			cin >> map[x][y];
+			if(map[x][y] == 2) {
+				viruses.push_back({x,y});
+			} else if(map[x][y] == 1) {
+				pillars.push_back({x,y});
+			} else {
+				empties.push_back({x,y});
+			}
+		}
+	}
+}
+{% endhighlight %}
+
+입력은 단순하다. 입력값을 그대로 지도에 입력하고 추가적으로 바이러스와 기둥 위치와 빈 공간 위치를 따로 저장해두면 된다.
+
+### initialize 메서드
+오브젝트 상태를 초기화 시켜주는 코드도 만들어주도록 한다.
+
+{% highlight cpp %}
+void initialize() {
+	for(int y = 0 ; y < n ; y++) {
+		for(int x = 0 ; x < m ; x++) {
+			map[x][y] = 0;
+		}
+	}
+	for(int i = 0 ; i < viruses.size() ; i++) {
+		map[viruses[i].x][viruses[i].y] = 2;
+	}
+	for(int i = 0 ; i < pillars.size() ; i++) {
+		map[pillars[i].x][pillars[i].y] = 1;
+	}
+}
+{% endhighlight %}
+
+<code>initialize</code> 메서드를 실행하면 본 오브젝트는 처음 입력을 받았을 때의 상태로 돌아가게 된다.
+
+
+### safe 메서드
+이제 <code>safe</code> 메서드를 만드는데, 이 함수는 현재의 안전지대 개수를 카운트하는 메서드이다. 즉, 다음에 만들 <code>spread</code> 메서드 이후에 실행되어야 할 함수이지만, 간단하기 때문에 먼저 만들어주도록 하였다.
+
+{% highlight cpp %}
+int safe() {
+	int count = 0;
+	for(int i = 0 ; i < empties.size(); i++)
+		if(map[i.x][i.y] == 0) count++;
+	}
+	return count;
+}
+{% endhighlight %}
+
+보통이라면 2중 루프를 사용하여 x축과 y축을 탐색하였겠지만, 우리는 이미 비어있던 공간의 배열을 가지고 있기 때문에 이것으로 돌려주도록 한다.
+어차피 바이러스가 있던 공간과 기둥이 있는 공간은 안전지대가 될수 없기 때문이다.
+
+### spread 메서드
+이 클래스의 하이라이트인 <code>spread</code> 메서드를 만들어보도록 하자.
+
+{% highlight cpp %}
+void spread() {
+	queue<Pos> q;
+	for(int i = 0 ; i < viruses.size() ; i++) {
+		q.push(viruses[i]);
+	}
+	while(!q.empty()) {
+		Pos p = q.front(); q.pop();
+		for(int i = 0 ; i < 4 ; i++) {
+			if(is_validpos(n, m, p.x + dir[i][0], p.y + dir[i][1])) {
+				Pos newpos = {p.x + dir[i][0], p.y + dir[i][1]};
+				if(map[newpos.x][newpos.y] == 0) {
+					map[newpos.x][newpos.y] = 2;
+					q.push(newpos);
+				}
+			}	
+		}
+	}
+}
+{% endhighlight %}
+
+우선 보다시피 코드는 간단하다. 우선 현재 존재하는 모든 기본 바이러스 위치들을 queue에 push해준다. 그 이후, queue에서 하나씩 위치를 pop한 후 아래와 같이 해준다.
+
+pop된 pos의 각각 위, 아래, 왼쪽, 오른쪽에 대하여 만약 새로운 좌표가 지도 범위 안에 있고 해당 좌표가 빈 공간일 경우, 지도에 바이러스를 마킹하고 새로운 바이러스 위치를 queue에 push해준다.
+
+위 과정을 반복해주면 바이러스는 모든 가능한 칸에 퍼지게 될 것이다. 
+
+
+### solve 메서드 만들기
+이제 모든 메서드들의 준비가 끝이 났고, 조합해서 완성하기만 하면 된다. <code>main</code> 함수에서 불러줄 <code>solve</code> 메서드를 만들어보자.
+
+{% highlight cpp %}
+int solve() {
+	int res = 0;
+	for(int i = 0 ; i < empties.size() ; i++) {
+		for(int j = i + 1 ; j < empties.size() ; j++) {
+			for(int k = j + 1 ; k < empties.size() ; k++) {
+				map[empties[i].x][empties[i].y] = 1;
+				map[empties[j].x][empties[j].y] = 1;
+				map[empties[k].x][empties[k].y] = 1;
+				spread();
+				int s = safe();
+				if(s > res) res = s;
+				initialize();
+			}
+		}
+	}
+	return res;
+}
+{% endhighlight %}
+
+본 메서드는 비교적 단순하다. 빈 공간 배열을 사용하여 3중 루프를 돌리면 된다. 그렇게 나온 세개의 기둥 좌표를 사용하여 지도에 바이러스 표시를 해주고, <code>spread</code> 메서드로 바이러스를 확산시키고, <code>safe</code> 메서드로 빈 공간을 카운트 한 후, <code>min</code> 값을 찾아서 리턴해주면 된다.
+
+즉, main 함수에서는 아래와 같은 콜만 해주면 된다:
+
+{% highlight cpp %}
+int main() {
+	
+	Lab *lab = new Lab();
+	cout << lab->solve() << endl;
+	
+}
+{% endhighlight %}
+
+
+
+## 마무리
+
+| 메모리 | 시간 |
+| ----- | --- |
+| 2024KB | 40ms |
+
+숏코딩 능력자들에 비하면 메모리와 시간이 많이 소모된 편이긴 하지만, 제출 현황을 살펴보면 나쁘지 않게 풀렸다는 것을 알 수 있었다.
+
+이번 문제의 핵심은 queue를 사용하여 바이러스를 퍼트리는 시뮬레이션을 얼마나 효율적으로 짜느냐였던 것 같은데, 비교적 잘 해결해였다는 것을 알 수 있다.
+
