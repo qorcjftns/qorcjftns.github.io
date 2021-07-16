@@ -2,7 +2,7 @@
 layout: post
 type:   posts
 title:  "[드랍박스 인터뷰 준비] ID Allocator"
-date:   "2021-07-16 10:16:11"
+date:   "2021-07-16 17:20:49"
 categories:
   - "드랍박스"
 tags:
@@ -80,12 +80,15 @@ public:
 	void dealloc(int id) {
 		if(id > cur_new) throw "ID Deallocation Failed";
 		else if(!ids[id]) throw "ID Deallocation Failed";
-		else empty.push(id);
+		else {
+			empty.push(id);
+			ids[id] = false;
+		}
 	}
 }
 {% endhighlight %}
 
-Github repo에 있는 1번 방식과 거의 흡사하지만, 가장 큰 차이점은 allocated ID를 트랙하지 않는다. 우선 이 class의 member는 queue 하나와 cur_new와 MAXID, 그리고 ids라는 bool array이다.
+Github repo에 있는 1번 방식과 거의 흡사하지만, 가장 큰 차이점은 allocated ID를 set이 아닌 bit array로 트래킹한다. 우선 이 class의 member는 queue 하나와 cur_new와 MAXID, 그리고 ids라는 bool array이다.
 
 ids 어레이는 말그대로 특정 id가 사용중인지 아닌지만 판단하는 bit 어레이이다. 이 변수는 cpp의 특성상 new로 생성하였기 때문에 모두 false(0)로 초기화되어 있게 될 것이다.
 
@@ -94,7 +97,36 @@ empty queue는 deallocate된 ID들을 보관해두는 queue이다. 당연하게�
 cur_new는 가장 최근에 생성한 ID를 보관하는 커서 변수이다. 한번 MAXID까지 ID가 생성된 경우에는 더이상 사용되지 않는다.
 
 ### alloc
-alloc 메서드는 단순한 원리로 작동된다. 우선 empty queue에 ID가 존재하는 경우, queue에서 ID를 pop해서 리턴해주면 된다. 혹은 empty queue가 사이즈가 0인 경우, cur_new라는 커서를
+alloc 메서드는 단순한 원리로 작동된다. 우선 empty queue에 ID가 존재하는 경우, queue에서 ID를 pop해서 리턴해주면 된다. 혹은 empty queue가 사이즈가 0인 경우, cur_new라는 커서를 사용하여 ID를 생성해준다.
+
+만약 커서와 empty queue 둘다 사용할 수 없는 경우에는 모든 ID가 사용중이라는 의미이기 때문에 Exception을 던져주면 될 것이다.
+
+### dealloc
+dealloc은 더욱 단순하다. ids array를 활용해서 해당 ID가 이미 사용중인지를 판단한다. 이미 사용중인 경우에는 empty queue에 넣고 ids array를 false로 체크해주면 끝난다. 혹시 현재 사용중이지 않은 ID를 dealloc하려는 경우에는 Exception을 던져준다.
+
+## 결과
+Github에 올라와있는 솔루션과 나의 솔루션을 비교해보자.
+
+| 방법 | alloc | dealloc | space |
+| --- | --- | --- | --- |
+| 1 | O(1) | O(n) | sizeof int * n |
+| 2 | O(n) | O(1) | n bytes |
+| 3 | O(logn) | O(logn) | n * 2 bytes |
+| 내 방식 | O(1) | O(1) | n bytes + sizeof(int) |
+
+상황에 따라 다르겠지만, 공간복잡도는 우성 1번과 2번 방식보다는 비싸게 나온다. 3번 방식보다도 상황에 따라서는 조금은 더 많이 차지하게 될 것이다.
+
+다만, alloc과 dealloc 메서드 모두 O(1)밖에 사용되지 않기 때문에 시간복잡도를 생각하면 가장 효율적인 방법이 된다.
+
+따라서, 상황에 따라서 아래와 같이 선택해서 사용하면 될 것이다:
+
+| 시간복잡도 | 공간복잡도 | 방법 |
+| --- | --- | --- |
+| 중요 | 중요하지 않음 | 내 방식 |
+| 중요하지 않음 | 중요 | 2번 |
+| 중요 | 중요 | 3번 |
+
+
 
 
 
