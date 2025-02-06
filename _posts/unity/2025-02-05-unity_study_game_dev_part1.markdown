@@ -2,7 +2,7 @@
 layout: post
 type:   posts
 title:  "[1] Unity 배우면서 게임 개발"
-date:   "2020-01-28"
+date:   "2025-02-05"
 categories:
   - "유니티 게임 개발 공부"
 tags:
